@@ -45,11 +45,24 @@
   (cmd :int)
   (arg :int))
 
+;; int ioctl(int fd, unsigned long request, ...);
+(defcfun ("ioctl" %ioctl) :int
+  (fd :int)
+  (request :unsigned-long)
+  (argp :pointer))
+
 ;;; ── Constants ─────────────────────────────────────────────────────────────────
+
+(defcstruct winsize
+  (ws-row :unsigned-short)
+  (ws-col :unsigned-short)
+  (ws-xpixel :unsigned-short)
+  (ws-ypixel :unsigned-short))
 
 (defconstant +f-getfl+   3)       ; fcntl: get flags
 (defconstant +f-setfl+   4)       ; fcntl: set flags
 (defconstant +o-nonblock+ #x800)  ; O_NONBLOCK on Linux x86-64
+(defconstant +tiocswinsz+ #x5414) ; Linux TIOCSWINSZ
 
 ;;; ── PTY struct ───────────────────────────────────────────────────────────────
 
@@ -154,3 +167,19 @@ Signals error on other failures."
     (cffi:with-foreign-string (buf data :encoding :utf-8)
       (let ((len (cffi:foreign-funcall "strlen" :pointer buf :size)))
         (%write fd buf len)))))
+
+
+(defun pty-resize (pty rows cols)
+  "Resize PTY to ROWS x COLS using TIOCSWINSZ."
+  (check-type pty pty)
+  (let ((fd (pty-master-fd pty)))
+    (when (minusp fd) (error "PTY is closed"))
+    (cffi:with-foreign-object (ws '(:struct winsize))
+      (setf (cffi:foreign-slot-value ws '(:struct winsize) 'ws-row) rows
+            (cffi:foreign-slot-value ws '(:struct winsize) 'ws-col) cols
+            (cffi:foreign-slot-value ws '(:struct winsize) 'ws-xpixel) 0
+            (cffi:foreign-slot-value ws '(:struct winsize) 'ws-ypixel) 0)
+      (let ((rc (%ioctl fd +tiocswinsz+ ws)))
+        (when (minusp rc)
+          (error "ioctl(TIOCSWINSZ) failed for fd ~a" fd))
+        t))))

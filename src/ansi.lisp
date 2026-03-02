@@ -12,7 +12,7 @@
   (type         :csi  :type keyword)  ; :csi :osc :dcs :esc :ctrl
   (params       nil   :type list)     ; list of integer parameters
   (intermediate nil   :type list)     ; intermediate bytes (rare)
-  (final        nil   :type character); final byte (e.g. #\m for SGR)
+  (final        nil   :type (or null character)); final byte (e.g. #\m for SGR)
   (data         nil))                 ; raw data for OSC/DCS
 
 ;;; ── Parser state machine ─────────────────────────────────────────────────────
@@ -93,6 +93,10 @@ Completed sequences accumulate in parser-result."
          ;; ; → empty first parameter
          ((char= char #\;)
           (push 0 (ansi-parser-params parser))
+          (setf (ansi-parser-state parser) :csi-param))
+         ;; Private marker bytes < = > ? before params
+         ((and (>= code 60) (<= code 63))
+          (push char (ansi-parser-intermediate parser))
           (setf (ansi-parser-state parser) :csi-param))
          ;; Intermediate byte
          ((and (>= code 32) (<= code 47))
