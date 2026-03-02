@@ -16,7 +16,8 @@
    ;; I/O
    #:spawn-shell
    #:read-from-pty
-   #:write-to-pty))
+   #:write-to-pty
+   #:pty-resize))
 
 (defpackage #:cl-term.ansi
   (:use #:cl)
@@ -43,6 +44,19 @@
    #:sgr-fg-color
    #:sgr-bg-color
    #:sgr-reset))
+
+(defpackage #:cl-term.config
+  (:use #:cl)
+  (:export
+   #:terminal-config
+   #:make-terminal-config
+   #:terminal-config-scrollback-limit
+   #:terminal-config-cursor-blink
+   #:terminal-config-bell-style
+   #:terminal-config-shell
+   #:terminal-config-keymap-name
+   #:normalize-config
+   #:merge-config))
 
 (defpackage #:cl-term.screen
   (:use #:cl)
@@ -81,10 +95,17 @@
    #:screen-erase-to-eol
    #:screen-erase-to-sol
    #:screen-insert-line
-   #:screen-delete-line))
+   #:screen-delete-line
+   #:char-display-width
+   #:screen-switch-alt
+   #:screen-switch-normal
+   #:screen-scrollback
+   #:screen-search-scrollback
+   #:screen-set-max-scrollback
+   #:screen-line-string))
 
 (defpackage #:cl-term.terminal
-  (:use #:cl #:cl-term.pty #:cl-term.ansi #:cl-term.screen)
+  (:use #:cl #:cl-term.pty #:cl-term.ansi #:cl-term.screen #:cl-term.config)
   (:export
    #:terminal
    #:make-terminal
@@ -95,7 +116,14 @@
    #:stop-terminal
    #:send-input
    #:receive-output
-   #:process-output))
+   #:process-output
+   #:send-key
+   #:terminal-bind-key
+   #:terminal-key-bindings
+   #:terminal-list-tabs
+   #:terminal-new-tab
+   #:terminal-switch-tab
+   #:terminal-search-scrollback))
 
 (defpackage #:cl-term
   (:use #:cl)
@@ -120,3 +148,17 @@
    #:screen-height
    #:screen-cursor-row
    #:screen-cursor-col))
+
+(defpackage #:cl-term.renderer
+  (:use #:common-lisp)
+  (:import-from #:cl-term.screen
+   #:screen #:screen-width #:screen-height
+   #:screen-cursor-row #:screen-cursor-col
+   #:screen-cell-char #:screen-cell-attrs
+   #:cell-attrs-bold #:cell-attrs-underline #:cell-attrs-blink
+   #:cell-attrs-reverse #:cell-attrs-fg-color #:cell-attrs-bg-color)
+  (:export
+   #:color-256-to-rgb
+   #:render-screen-plain
+   #:render-screen-ansi
+   #:dump-screen))
