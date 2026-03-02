@@ -123,6 +123,8 @@
    #:terminal-list-tabs
    #:terminal-new-tab
    #:terminal-switch-tab
+   #:terminal-close-tab
+   #:terminal-rename-tab
    #:terminal-search-scrollback))
 
 (defpackage #:cl-term

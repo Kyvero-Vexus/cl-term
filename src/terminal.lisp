@@ -83,6 +83,24 @@
             (terminal-parser terminal) (terminal-tab-parser tab))
       t)))
 
+(defun terminal-rename-tab (terminal tab-id new-title)
+  (let ((tab (find tab-id (terminal-tabs terminal) :key #'terminal-tab-id)))
+    (when tab
+      (setf (terminal-tab-title tab) new-title)
+      tab)))
+
+(defun terminal-close-tab (terminal tab-id)
+  (let* ((tabs (terminal-tabs terminal))
+         (tab (find tab-id tabs :key #'terminal-tab-id)))
+    (when (and tab (> (length tabs) 1))
+      (setf (terminal-tabs terminal) (remove tab tabs :test #'eq))
+      (when (= tab-id (terminal-active-tab-id terminal))
+        (let ((next (first (terminal-tabs terminal))))
+          (setf (terminal-active-tab-id terminal) (terminal-tab-id next)
+                (terminal-screen terminal) (terminal-tab-screen next)
+                (terminal-parser terminal) (terminal-tab-parser next))))
+      t)))
+
 (defun terminal-bind-key (terminal key chord-output)
   (setf (gethash key (terminal-key-bindings terminal)) chord-output)
   terminal)

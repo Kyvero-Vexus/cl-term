@@ -37,5 +37,23 @@
     (assert (= 2 (length (cl-term.terminal:terminal-list-tabs t1))))
     (assert (cl-term.terminal:terminal-switch-tab t1 1))))
 
+
+(test "terminal rename tab"
+  (let ((t1 (cl-term.terminal:make-terminal :width 80 :height 24)))
+    (cl-term.terminal:terminal-new-tab t1 :title "build")
+    (assert (cl-term.terminal:terminal-rename-tab t1 1 "logs"))
+    (let ((tab (find 1 (cl-term.terminal:terminal-list-tabs t1)
+                     :key (lambda (x) (getf x :id)))))
+      (assert (string= "logs" (getf tab :title))))))
+
+(test "terminal close tab keeps one and reselects active"
+  (let ((t1 (cl-term.terminal:make-terminal :width 80 :height 24)))
+    (cl-term.terminal:terminal-new-tab t1 :title "build")
+    (cl-term.terminal:terminal-switch-tab t1 1)
+    (assert (cl-term.terminal:terminal-close-tab t1 1))
+    (assert (= 1 (length (cl-term.terminal:terminal-list-tabs t1))))
+    (assert (eq t (getf (first (cl-term.terminal:terminal-list-tabs t1)) :active)))
+    (assert (not (cl-term.terminal:terminal-close-tab t1 0)))))
+
 (format t "~%=== Phase4 Results: ~A passed, ~A failed ===~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))
